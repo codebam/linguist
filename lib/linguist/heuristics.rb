@@ -110,6 +110,12 @@ module Linguist
       end
     end
 
+    disambiguate ".cls" do |data|
+      if /\\\w+{/.match(data)
+        Language["TeX"]
+      end
+    end
+
     disambiguate ".cs" do |data|
       if /![\w\s]+methodsFor: /.match(data)
         Language["Smalltalk"]
@@ -144,10 +150,22 @@ module Linguist
       end
     end
 
-    disambiguate ".for", ".f" do |data|
+    fortran_rx = /^([c*][^abd-z]|      (subroutine|program|end|data)\s|\s*!)/i
+
+    disambiguate ".f" do |data|
       if /^: /.match(data)
         Language["Forth"]
-      elsif /^([c*][^abd-z]|      (subroutine|program|end)\s|\s*!)/i.match(data)
+      elsif data.include?("flowop")
+        Language["Filebench WML"]
+      elsif fortran_rx.match(data)
+        Language["FORTRAN"]
+      end
+    end
+
+    disambiguate ".for" do |data|
+      if /^: /.match(data)
+        Language["Forth"]
+      elsif fortran_rx.match(data)
         Language["FORTRAN"]
       end
     end
@@ -190,6 +208,8 @@ module Linguist
     disambiguate ".inc" do |data|
       if /^<\?(?:php)?/.match(data)
         Language["PHP"]
+      elsif /^\s*#(declare|local|macro|while)\s/.match(data)
+        Language["POV-Ray SDL"]
       end
     end
 
@@ -230,7 +250,7 @@ module Linguist
         Language["MUF"]
       elsif /^\s*;/.match(data)
         Language["M"]
-      elsif /^\s*\(\*/.match(data)
+      elsif /\*\)$/.match(data)
         Language["Mathematica"]
       elsif /^\s*%/.match(data)
         Language["Matlab"]
@@ -240,7 +260,7 @@ module Linguist
     end
 
     disambiguate ".md" do |data|
-      if /^[-a-z0-9=#!\*\[|]/i.match(data)
+      if /(^[-a-z0-9=#!\*\[|>])|<\//i.match(data) || data.empty?
         Language["Markdown"]
       elsif /^(;;|\(define_)/.match(data)
         Language["GCC machine description"]
@@ -258,7 +278,7 @@ module Linguist
     disambiguate ".mod" do |data|
       if data.include?('<!ENTITY ')
         Language["XML"]
-      elsif /MODULE\s\w+\s*;/i.match(data) || /^\s*END \w+;$/i.match(data)
+      elsif /^\s*MODULE [\w\.]+;/i.match(data) || /^\s*END [\w\.]+;/i.match(data)
         Language["Modula-2"]
       else
         [Language["Linux Kernel Module"], Language["AMPL"]]
@@ -306,7 +326,7 @@ module Linguist
     end
 
     disambiguate ".pl" do |data|
-      if /^[^#]+:-/.match(data)
+      if /^[^#]*:-/.match(data)
         Language["Prolog"]
       elsif /use strict|use\s+v?5\./.match(data)
         Language["Perl"]
@@ -354,8 +374,16 @@ module Linguist
     disambiguate ".r" do |data|
       if /\bRebol\b/i.match(data)
         Language["Rebol"]
-      elsif data.include?("<-")
+      elsif /<-|^\s*#/.match(data)
         Language["R"]
+      end
+    end
+
+    disambiguate ".rno" do |data|
+      if /^\.!|^\.end lit(?:eral)?\b/i.match(data)
+        Language["RUNOFF"]
+      elsif /^\.\\" /.match(data)
+        Language["Groff"]
       end
     end
 
@@ -422,7 +450,7 @@ module Linguist
     end
 
     disambiguate ".ts" do |data|
-      if data.include?("</TS>")
+      if data.include?("<TS")
         Language["XML"]
       else
         Language["TypeScript"]
